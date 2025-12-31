@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vize Başvuru Analiz ve Tahmin Sistemi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #3b82f6;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --bg-light: #f8fafc;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .main-container {
+            padding: 2rem 0;
+        }
+
+        .header-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .header-card h1 {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .header-card p {
+            color: #64748b;
+            margin: 0;
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 0.75rem;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 0.875rem 2rem;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            display: none;
+        }
+
+        .result-card.show {
+            display: block;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .prediction-badge {
+            display: inline-block;
+            padding: 1rem 2rem;
+            border-radius: 15px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 1rem 0;
+        }
+
+        .prediction-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .prediction-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .stats-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stats-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stats-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .stats-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 2rem;
+        }
+
+        .chart-title {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .progress-container {
+            margin: 1.5rem 0;
+        }
+
+        .progress {
+            height: 30px;
+            border-radius: 15px;
+            background: #e2e8f0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            border-radius: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: width 1s ease-in-out;
+        }
+
+        .info-box {
+            background: #f1f5f9;
+            border-left: 4px solid var(--secondary-color);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .info-box i {
+            color: var(--secondary-color);
+            margin-right: 0.5rem;
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .loading-spinner.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <div class="container">
+        <!-- Header -->
+        <div class="header-card">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1><i class="fas fa-passport me-2"></i>Vize Başvuru Analiz ve Tahmin Sistemi</h1>
+                    <p>Yapay zeka destekli vize kabul olasılığı analizi ve detaylı istatistikler</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="stats-card">
+                        <div class="stats-icon text-primary">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stats-value" id="totalPredictions">0</div>
+                        <div class="stats-label">Toplam Tahmin</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Sol Taraf: Form ve Sonuç -->
+            <div class="col-lg-7">
+                <!-- Form Card -->
+                <div class="form-card">
+                    <h3 class="mb-4"><i class="fas fa-edit me-2 text-primary"></i>Başvuru Bilgileri</h3>
+                    
+                    <form id="visaForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><i class="fas fa-birthday-cake me-2"></i>Yaş</label>
+                                <input type="number" name="Age" class="form-control" required 
+                                       placeholder="Örn: 30" min="18" max="100">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><i class="fas fa-briefcase me-2"></i>Meslek</label>
+                                <select name="Occupation" class="form-select" required>
+                                    <option value="">Seçiniz...</option>
+                                    <option value="Engineer">Mühendis</option>
+                                    <option value="Doctor">Doktor</option>
+                                    <option value="Student">Öğrenci</option>
+                                    <option value="Manager">Yönetici</option>
+                                    <option value="Teacher">Öğretmen</option>
+                                    <option value="Gov_Officer">Kamu Görevlisi</option>
+                                    <option value="Freelancer">Serbest Çalışan</option>
+                                    <option value="Unemployed">İşsiz</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><i class="fas fa-money-bill-wave me-2"></i>Yıllık Gelir (TRY)</label>
+                                <input type="number" name="AnnualIncome_TRY" class="form-control" required 
+                                       placeholder="Örn: 500000" min="0">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><i class="fas fa-plane me-2"></i>Seyahat Geçmişi Skoru</label>
+                                <input type="number" name="TravelHistoryScore" class="form-control" 
+                                       min="0" max="10" required placeholder="0-10 arası">
+                                <small class="text-muted">Önceki seyahat deneyimlerinize göre 0-10 arası puan verin</small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><i class="fas fa-globe me-2"></i>Hedef Ülke</label>
+                                <select name="TargetCountry" class="form-select" required>
+                                    <option value="">Seçiniz...</option>
+                                    <option value="Germany">Almanya</option>
+                                    <option value="France">Fransa</option>
+                                    <option value="Italy">İtalya</option>
+                                    <option value="Spain">İspanya</option>
+                                    <option value="Netherlands">Hollanda</option>
+                                    <option value="Belgium">Belçika</option>
+                                    <option value="Austria">Avusturya</option>
+                                    <option value="Greece">Yunanistan</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><i class="fas fa-file-alt me-2"></i>Vize Türü</label>
+                                <select name="VisaType" class="form-select" required>
+                                    <option value="">Seçiniz...</option>
+                                    <option value="Tourist">Turistik</option>
+                                    <option value="Business">Ticari</option>
+                                    <option value="Student">Eğitim</option>
+                                    <option value="Family/Friend Visit">Aile/Ziyaret</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="loading-spinner" id="loadingSpinner">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Yükleniyor...</span>
+                            </div>
+                            <p class="mt-2">Tahmin yapılıyor...</p>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-calculator me-2"></i>Tahmin Et
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Result Card -->
+                <div class="result-card" id="resultCard">
+                    <h3 class="mb-4"><i class="fas fa-chart-pie me-2 text-primary"></i>Tahmin Sonuçları</h3>
+                    
+                    <div class="text-center">
+                        <div id="predictionBadge" class="prediction-badge"></div>
+                    </div>
+
+                    <div class="progress-container">
+                        <label class="form-label mb-2">Kabul Olasılığı</label>
+                        <div class="progress">
+                            <div id="probBar" class="progress-bar" role="progressbar" style="width: 0%;">
+                                <span id="probText">0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Not:</strong> Bu tahmin yapay zeka modeli tarafından üretilmiştir. 
+                        Gerçek başvuru sonucu konsolosluk tarafından belirlenir.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sağ Taraf: Grafikler ve İstatistikler -->
+            <div class="col-lg-5">
+                <!-- İstatistik Kartları -->
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <div class="stats-card">
+                            <div class="stats-icon text-success">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stats-value" id="successRate">0%</div>
+                            <div class="stats-label">Başarı Oranı</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stats-card">
+                            <div class="stats-icon text-danger">
+                                <i class="fas fa-times-circle"></i>
+                            </div>
+                            <div class="stats-value" id="rejectionRate">0%</div>
+                            <div class="stats-label">Red Oranı</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Olasılık Dağılımı Grafiği -->
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <i class="fas fa-chart-bar me-2"></i>Kabul Olasılığı Dağılımı
+                    </div>
+                    <canvas id="probabilityChart"></canvas>
+                </div>
+
+                <!-- Ülke Dağılımı Grafiği -->
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <i class="fas fa-map-marked-alt me-2"></i>Ülkelere Göre Başarı Oranı
+                    </div>
+                    <canvas id="countryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Global değişkenler
+    let totalPredictions = 0;
+    let successCount = 0;
+    let rejectionCount = 0;
+    let probabilityHistory = [];
+
+    // Chart.js grafikleri
+    const probabilityCtx = document.getElementById('probabilityChart').getContext('2d');
+    const probabilityChart = new Chart(probabilityCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Düşük (0-30%)', 'Orta (30-60%)', 'Yüksek (60-100%)'],
+            datasets: [{
+                data: [0, 0, 0],
+                backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    const countryCtx = document.getElementById('countryChart').getContext('2d');
+    const countryChart = new Chart(countryCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Başarı Oranı (%)',
+                data: [],
+                borderColor: '#8b5cf6',
+                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+
+    // Form submit
+    document.getElementById('visaForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const resultCard = document.getElementById('resultCard');
+        
+        loadingSpinner.classList.add('show');
+        resultCard.classList.remove('show');
+
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        // Sayısal değerleri dönüştür
+        data.Age = parseInt(data.Age);
+        data.AnnualIncome_TRY = parseInt(data.AnnualIncome_TRY);
+        data.TravelHistoryScore = parseInt(data.TravelHistoryScore);
+
+        try {
+            const response = await fetch('/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            
+            // Sonuçları göster
+            displayResults(result, data);
+            
+            // İstatistikleri güncelle
+            updateStatistics(result, data);
+            
+            loadingSpinner.classList.remove('show');
+            resultCard.classList.add('show');
+            
+        } catch (error) {
+            console.error('Hata:', error);
+            loadingSpinner.classList.remove('show');
+            alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+        }
+    });
+
+    function displayResults(result, inputData) {
+        const prob = parseFloat(result.visa_acceptance_rate.replace('%', ''));
+        const predictionBadge = document.getElementById('predictionBadge');
+        const probBar = document.getElementById('probBar');
+        const probText = document.getElementById('probText');
+
+        if (result.prediction === 1) {
+            predictionBadge.className = 'prediction-badge prediction-success';
+            predictionBadge.innerHTML = '<i class="fas fa-check-circle me-2"></i>Vize Onaylanabilir';
+            probBar.className = 'progress-bar bg-success';
+        } else {
+            predictionBadge.className = 'prediction-badge prediction-danger';
+            predictionBadge.innerHTML = '<i class="fas fa-times-circle me-2"></i>Vize Reddedilebilir';
+            probBar.className = 'progress-bar bg-danger';
+        }
+
+        probBar.style.width = prob + '%';
+        probText.textContent = prob.toFixed(2) + '%';
+    }
+
+    function updateStatistics(result, inputData) {
+        totalPredictions++;
+        const prob = parseFloat(result.visa_acceptance_rate.replace('%', ''));
+
+        if (result.prediction === 1) {
+            successCount++;
+        } else {
+            rejectionCount++;
+        }
+
+        // Genel istatistikler
+        document.getElementById('totalPredictions').textContent = totalPredictions;
+        document.getElementById('successRate').textContent = 
+            totalPredictions > 0 ? ((successCount / totalPredictions) * 100).toFixed(1) + '%' : '0%';
+        document.getElementById('rejectionRate').textContent = 
+            totalPredictions > 0 ? ((rejectionCount / totalPredictions) * 100).toFixed(1) + '%' : '0%';
+
+        // Olasılık geçmişi
+        probabilityHistory.push(prob);
+        if (probabilityHistory.length > 10) probabilityHistory.shift();
+
+        // Olasılık dağılımı
+        const low = probabilityHistory.filter(p => p < 30).length;
+        const medium = probabilityHistory.filter(p => p >= 30 && p < 60).length;
+        const high = probabilityHistory.filter(p => p >= 60).length;
+        
+        probabilityChart.data.datasets[0].data = [low, medium, high];
+        probabilityChart.update();
+
+        // Meslek ve ülke istatistikleri artık veritabanından geliyor
+        // Tahmin sonrası güncelleme yapmıyoruz çünkü gerçek veriler veritabanında
+    }
+
+    // Sayfa yüklendiğinde veritabanından veri çek
+    async function loadDatabaseStats() {
+        try {
+            // Ülke istatistikleri
+            const countryResponse = await fetch('/api/country-stats');
+            const countryData = await countryResponse.json();
+            
+            countryChart.data.labels = countryData.labels;
+            countryChart.data.datasets[0].data = countryData.success_rates;
+            countryChart.update();
+
+            // Genel istatistikleri ülke verilerinden hesapla
+            if (countryData.counts && countryData.success_rates) {
+                let total = 0;
+                let totalSuccessful = 0;
+                
+                for (let i = 0; i < countryData.counts.length; i++) {
+                    const count = countryData.counts[i];
+                    const successRate = countryData.success_rates[i];
+                    total += count;
+                    totalSuccessful += Math.round(count * successRate / 100);
+                }
+                
+                const rejected = total - totalSuccessful;
+                const successRate = total > 0 ? ((totalSuccessful / total) * 100).toFixed(2) : 0;
+                const rejectionRate = total > 0 ? ((rejected / total) * 100).toFixed(2) : 0;
+                
+                document.getElementById('totalPredictions').textContent = total.toLocaleString();
+                document.getElementById('successRate').textContent = successRate + '%';
+                document.getElementById('rejectionRate').textContent = rejectionRate + '%';
+            }
+            
+        } catch (error) {
+            console.error('İstatistikler yüklenirken hata:', error);
+        }
+    }
+
+    // Sayfa yüklendiğinde çalıştır
+    window.addEventListener('DOMContentLoaded', loadDatabaseStats);
+
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
